@@ -1,0 +1,26 @@
+
+services:
+
+  traefik:
+    image: "traefik:v3.1"
+    container_name: "traefik"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME}
+    networks:
+      - traefik-network
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./volumes/traefik/letsencrypt:/letsencrypt"
+      - "./volumes/traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./volumes/traefik/dynamic:/dynamic:ro"
+
+networks:
+  traefik-network:
+    driver: bridge
