@@ -26,3 +26,6 @@ jobs:
         oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
         tags: tag:cicd-pipeline
+
+    - name: Verify Target Server SSH Port Open
+      run: nc -z -v ${{ secrets.TS_TARGET_SERVER }} 22
