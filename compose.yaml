@@ -20,6 +20,11 @@ services:
       - "./volumes/traefik/letsencrypt:/letsencrypt"
       - "./volumes/traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
       - "./volumes/traefik/dynamic:/dynamic:ro"
+    healthcheck:
+      test: "nc -zv 127.0.0.1 80 && nc -zv 127.0.0.1 443 && nc -zv 127.0.0.1 8080"
+      interval: 1s
+      timeout: 1s
+      retries: 15
 
 networks:
   traefik-network:
