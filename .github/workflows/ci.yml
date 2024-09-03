@@ -33,6 +33,7 @@ jobs:
 
     - name: Bring down Traefik container on server
       uses: appleboy/ssh-action@v1.0.3
+      continue-on-error: true
       with:
         host: ${{ secrets.TS_TARGET_SERVER }}
         username: ${{ secrets.TARGET_SERVER_USERNAME }}
