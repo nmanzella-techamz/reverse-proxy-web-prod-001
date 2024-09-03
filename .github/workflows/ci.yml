@@ -41,27 +41,57 @@ jobs:
         ssh-keyscan -H ${{ secrets.TS_TARGET_SERVER }} >> ~/.ssh/known_hosts
 
     - name: Bring down Traefik container on server
-      run: |
-        ssh ${{ secrets.TS_TARGET_SERVER }} 'cd ${{ github.event.repository.name }} && docker compose down'
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.TS_TARGET_SERVER }}
+        username: ${{ secrets.TARGET_SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIV_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          cd ${{ github.event.repository.name }} && docker compose down
 
     - name: Preserve certificate data
-      run: |
-        ssh ${{ secrets.TS_TARGET_SERVER }} 'mkdir -p letsencrypt'
-        ssh ${{ secrets.TS_TARGET_SERVER }} '[ -f ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json ] && cp ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json letsencrypt/acme.json'
-        ssh ${{ secrets.TS_TARGET_SERVER }} '[ ! -f letsencrypt/acme.json ] && echo "{}" > letsencrypt/acme.json'
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.TS_TARGET_SERVER }}
+        username: ${{ secrets.TARGET_SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIV_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          mkdir -p letsencrypt
+          [ -f ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json ] && cp ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json letsencrypt/acme.json
+          [ ! -f letsencrypt/acme.json ] && echo "{}" > letsencrypt/acme.json
 
     - name: Delete directory on server
-      run: |
-        ssh ${{ secrets.TS_TARGET_SERVER }} 'ls ${{ github.event.repository.name }}'
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.TS_TARGET_SERVER }}
+        username: ${{ secrets.TARGET_SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIV_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          ssh ${{ secrets.TS_TARGET_SERVER }} 'ls ${{ github.event.repository.name }}'
 
     - name: Deploy files
       run: |
         rsync -avh --exclude=".[!.]*" * ${{ secrets.TS_TARGET_SERVER }}:/root/${{ github.event.repository.name }}
 
     - name: Restore certificate data
-      run: |
-        ssh ${{ secrets.TS_TARGET_SERVER }} 'cp letsencrypt/acme.json ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json'
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.TS_TARGET_SERVER }}
+        username: ${{ secrets.TARGET_SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIV_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          ssh ${{ secrets.TS_TARGET_SERVER }} 'cp letsencrypt/acme.json ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json'
 
     - name: Bring up Traefik container on server
-      run: |
-        ssh ${{ secrets.TS_TARGET_SERVER }} 'cd ${{ github.event.repository.name }} && docker compose up -d'
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.TS_TARGET_SERVER }}
+        username: ${{ secrets.TARGET_SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIV_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          ssh ${{ secrets.TS_TARGET_SERVER }} 'cd ${{ github.event.repository.name }} && docker compose up -d'
