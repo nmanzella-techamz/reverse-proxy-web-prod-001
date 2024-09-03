@@ -1,5 +1,5 @@
 name: Docker Image CICD
-run-name: "🛠️ ${{ github.event.head_commit.message }} (${{ github.sha }})"
+run-name: "${{ github.event.head_commit.message }} (${{ github.sha }})"
 
 on:
   push:
@@ -24,18 +24,12 @@ jobs:
     - name: Show container status
       run: docker ps 
 
-    - name: List all files in working directory
-      run: ls -lah
-
     - name: Tailscale connection
       uses: tailscale/github-action@v2
       with:
         oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
         tags: tag:cicd-pipeline
-
-    - name: Verify target server SSH port open
-      run: nc -z -v ${{ secrets.TS_TARGET_SERVER }} 22
 
     - name: Setup SSH
       run: |
@@ -46,6 +40,28 @@ jobs:
         chmod 600 ~/.ssh/id_ed25519.pub
         ssh-keyscan -H ${{ secrets.TS_TARGET_SERVER }} >> ~/.ssh/known_hosts
 
-    - name: Connect over SSH
+    - name: Bring down Traefik container on server
       run: |
-        ssh ${{ secrets.TARGET_SERVER_USERNAME }}@${{ secrets.TS_TARGET_SERVER }} date
+        ssh ${{ secrets.TS_TARGET_SERVER }} 'cd ${{ github.event.repository.name }} && docker compose down'
+
+    - name: Preserve certificate data
+      run: |
+        ssh ${{ secrets.TS_TARGET_SERVER }} 'mkdir -p letsencrypt'
+        ssh ${{ secrets.TS_TARGET_SERVER }} '[ -f ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json ] && cp ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json letsencrypt/acme.json'
+        ssh ${{ secrets.TS_TARGET_SERVER }} '[ ! -f letsencrypt/acme.json ] && echo "{}" > letsencrypt/acme.json'
+
+    - name: Delete directory on server
+      run: |
+        ssh ${{ secrets.TS_TARGET_SERVER }} 'ls ${{ github.event.repository.name }}'
+
+    - name: Deploy files
+      run: |
+        rsync -avh --exclude=".[!.]*" * ${{ secrets.TS_TARGET_SERVER }}:/root/${{ github.event.repository.name }}
+
+    - name: Restore certificate data
+      run: |
+        ssh ${{ secrets.TS_TARGET_SERVER }} 'cp letsencrypt/acme.json ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json'
+
+    - name: Bring up Traefik container on server
+      run: |
+        ssh ${{ secrets.TS_TARGET_SERVER }} 'cd ${{ github.event.repository.name }} && docker compose up -d'
