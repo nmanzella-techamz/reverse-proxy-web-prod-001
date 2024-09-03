@@ -1,4 +1,5 @@
 name: Docker Image CICD
+run-name: "🛠️ ${{ github.event.head_commit.message }} (${{ github.sha }})"
 
 on:
   push:
@@ -8,11 +9,14 @@ on:
 
 jobs:
 
-  up:
+  docker-build:
 
     runs-on: ubuntu-latest
 
     steps:
+    - name: Print working directory
+      run: pwd
+
     - uses: actions/checkout@v4
     - name: Build the Docker image
       run: docker compose up --detach --wait --wait-timeout 30
@@ -20,12 +24,28 @@ jobs:
     - name: Show container status
       run: docker ps 
 
-    - name: Tailscale
+    - name: List all files in working directory
+      run: ls -lah
+
+    - name: Tailscale connection
       uses: tailscale/github-action@v2
       with:
         oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
         tags: tag:cicd-pipeline
 
-    - name: Verify Target Server SSH Port Open
+    - name: Verify target server SSH port open
       run: nc -z -v ${{ secrets.TS_TARGET_SERVER }} 22
+
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh/
+        echo "${{ secrets.SSH_PRIV_KEY }}" > ~/.ssh/id_ed25519
+        echo "${{ secrets.SSH_PUB_KEY }}" > ~/.ssh/id_ed25519.pub
+        chmod 600 ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519.pub
+        ssh-keyscan -H ${{ secrets.TS_TARGET_SERVER }} >> ~/.ssh/known_hosts
+
+    - name: Connect over SSH
+      run: |
+        ssh ${{ secrets.TARGET_SERVER_USERNAME }}@${{ secrets.TS_TARGET_SERVER }} date
