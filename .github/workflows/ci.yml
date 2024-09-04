@@ -24,6 +24,12 @@ jobs:
     - name: Show container status
       run: docker ps 
 
+    - name: Stop and remove the Docker container
+      run: docker compose down
+
+    - name: Remove the certificate data file
+      run: rm volumes/traefik/letsencrypt/acme.json
+
     - name: Tailscale connection
       uses: tailscale/github-action@v2
       with:
