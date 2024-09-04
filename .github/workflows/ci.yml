@@ -74,7 +74,7 @@ jobs:
       run: ssh srv 'touch letsencrypt/acme.json'
 
     - name: Delete directory on server
-      run: ssh srv 'ls ${{ github.event.repository.name }}'
+      run: ssh srv 'rm -rf ${{ github.event.repository.name }}'
 
     - name: Deploy files
       run: rsync -avh --exclude=".[!.]*" * srv:/root/${{ github.event.repository.name }}
