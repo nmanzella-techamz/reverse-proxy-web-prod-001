@@ -9,6 +9,7 @@ services:
       - no-new-privileges:true
     environment:
       DOMAIN_NAME: ${DOMAIN_NAME}
+      COMPOSE_PROJECT_NAME: "reverse-proxy"
     networks:
       - traefik-network
     ports:
