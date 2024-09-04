@@ -65,7 +65,7 @@ jobs:
       run: ssh srv 'cp ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json letsencrypt/acme.json'
 
     - name: Create empty certificate file if it does not exist
-      run: ssh srv '[ ! -f letsencrypt/acme.json ] && echo "{}" > letsencrypt/acme.json'
+      run: ssh srv 'touch letsencrypt/acme.json'
 
     - name: Delete directory on server
       run: ssh srv 'ls ${{ github.event.repository.name }}'
