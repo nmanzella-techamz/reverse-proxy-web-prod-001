@@ -85,6 +85,9 @@ jobs:
     - name: Restore certificate data
       run: ssh srv 'cp letsencrypt/acme.json ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json'
 
-    - name: Bring up Traefik container on server
+    - name: Set permissons on certificate data
+      run: ssh srv 'chmod 600 ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json'
+
+    - name: Always bring up Traefik container on server
       if: ${{ always() }}
       run: ssh srv 'cd ${{ github.event.repository.name }} && docker compose up -d'
