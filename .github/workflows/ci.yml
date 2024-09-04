@@ -79,6 +79,9 @@ jobs:
     - name: Deploy files
       run: rsync -avh --exclude=".[!.]*" * srv:/root/${{ github.event.repository.name }}
 
+    - name: Create .env
+      run: ssh srv 'echo "COMPOSE_PROJECT_NAME=reverse-proxy" > ${{ github.event.repository.name }}/.env'
+
     - name: Restore certificate data
       run: ssh srv 'cp letsencrypt/acme.json ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json'
 
