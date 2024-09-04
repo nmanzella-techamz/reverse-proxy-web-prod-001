@@ -54,6 +54,7 @@ jobs:
       run: ssh srv 'mkdir -p ${{ github.event.repository.name }}'
 
     - name: Bring down Traefik container on server
+      continue-on-error: true
       run: ssh srv 'cd ${{ github.event.repository.name }} && docker compose down'
 
     - name: Preserve certificate data
