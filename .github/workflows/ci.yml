@@ -50,6 +50,9 @@ jobs:
         SSH_HOST: ${{ secrets.TS_TARGET_SERVER }}
         SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
 
+    - name: Create project directory on server
+      run: ssh srv 'mkdir -p ${{ github.event.repository.name }}'
+
     - name: Bring down Traefik container on server
       run: ssh srv 'cd ${{ github.event.repository.name }} && docker compose down'
 
