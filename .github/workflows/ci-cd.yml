@@ -18,6 +18,9 @@ jobs:
     - name: Print working directory
       run: pwd
 
+    - name: Create Docker network
+      run: docker network create traefik-network
+
     - name: Build the Docker image
       run: docker compose up --detach --wait --wait-timeout 30
 
