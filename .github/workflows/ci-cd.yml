@@ -9,15 +9,15 @@ on:
 
 jobs:
 
-  docker-build:
-
+  docker-check-health:
+    name: Ensure Docker container passes health check
     runs-on: ubuntu-latest
-
     steps:
+    - uses: actions/checkout@v4
+
     - name: Print working directory
       run: pwd
 
-    - uses: actions/checkout@v4
     - name: Build the Docker image
       run: docker compose up --detach --wait --wait-timeout 30
 
@@ -29,6 +29,13 @@ jobs:
 
     - name: Remove the certificate data file
       run: rm volumes/traefik/letsencrypt/acme.json
+
+  deploy:
+    name: Deploy the files to the production server
+    runs-on: ubuntu-latest
+    needs: docker-check-health
+    steps:
+    - uses: actions/checkout@v4
 
     - name: Tailscale connection
       uses: tailscale/github-action@v2
@@ -79,8 +86,8 @@ jobs:
     - name: Deploy files
       run: rsync -avh --exclude=".[!.]*" * srv:/root/${{ github.event.repository.name }}
 
-    - name: Create .env
-      run: ssh srv 'echo "COMPOSE_PROJECT_NAME=reverse-proxy" > ${{ github.event.repository.name }}/.env'
+    # - name: Create .env
+    #   run: ssh srv 'echo "COMPOSE_PROJECT_NAME=reverse-proxy" > ${{ github.event.repository.name }}/.env'
 
     - name: Restore certificate data
       run: ssh srv 'cp letsencrypt/acme.json ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json'
@@ -88,6 +95,9 @@ jobs:
     - name: Set permissons on certificate data
       run: ssh srv 'chmod 600 ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json'
 
+    - name: Create Docker network if it does not exist
+      run: ssh srv 'if docker network ls --format "{{.Name}}" | grep -q traefik-network; then echo "Network already exists"; else docker network create traefik-network;fi'
+
     - name: Always bring up Traefik container on server
       if: ${{ always() }}
-      run: ssh srv 'cd ${{ github.event.repository.name }} && docker compose up -d'
+      run: ssh srv 'cd ${{ github.event.repository.name }} && docker compose up --detach --wait --wait-timeout 30'
