@@ -19,7 +19,7 @@ jobs:
       run: pwd
 
     - name: Create Docker network
-      run: docker network create traefik-network
+      run: docker network create -d bridge traefik-network
 
     - name: Build the Docker image
       run: docker compose up --detach --wait --wait-timeout 30
@@ -89,8 +89,11 @@ jobs:
     - name: Deploy files
       run: rsync -avh --exclude=".[!.]*" * srv:/root/${{ github.event.repository.name }}
 
-    # - name: Create .env
-    #   run: ssh srv 'echo "COMPOSE_PROJECT_NAME=reverse-proxy" > ${{ github.event.repository.name }}/.env'
+    - name: Create .env file
+      run: >
+        ssh srv '
+        echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME }}" > "${{ github.event.repository.name }}/.env"
+        '
 
     - name: Restore certificate data
       run: ssh srv 'cp letsencrypt/acme.json ${{ github.event.repository.name }}/volumes/traefik/letsencrypt/acme.json'
